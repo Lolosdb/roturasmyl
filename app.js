@@ -22,7 +22,7 @@ let state = {
 var els;
 
 // --- Initialization ---
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
     // 1. Capture DOM elements
     els = {
         orderInput: document.getElementById('orderNumber'),
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         changePhoneBtn: document.getElementById('changePhoneBtn')
     };
 
-    // 2. Attach Event Listeners (safely checking existence)
+    // 2. Attach Event Listeners
     if (els.orderInput) els.orderInput.addEventListener('input', (e) => state.orderNumber = e.target.value);
 
     // Settings
@@ -113,7 +113,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Log init success
     console.log('App Initialized. Clients loaded:', clients ? clients.length : 0);
-});
+}
+
+// Check state to ensure init
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
 // --- Functions ---
 
