@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#121212">
+  <meta name="theme-color" content="#121212">
+  <title>Reporte de Roturas</title>
+  <style>
+:root {
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --primary-color: #25D366;
+    /* WhatsApp Green */
+    --primary-dark: #128C7E;
+    --accent-color: #00bcd4;
+    --danger-color: #ff5252;
+    --input-bg: #2c2c2c;
+    --border-color: #333;
+    --radius: 12px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    padding-bottom: 40px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+header {
+    text-align: center;
+    padding: 16px 0 24px;
+}
+
+h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+input,
+textarea {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* Item Inputs */
+.item-input-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.grow {
+    flex: 1;
+}
+
+.shrink {
+    width: 80px;
+}
+
+/* Buttons */
+.btn {
+    border: none;
+    padding: 14px;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.primary {
+    background-color: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.secondary {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.full-width {
+    width: 100%;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 8px;
+}
+
+/* Suggestions Dropdown */
+.relative {
+    position: relative;
+}
+
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #2a2a2a;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.suggestion-item {
+    padding: 12px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: #333;
+}
+
+.suggestion-code {
+    color: var(--accent-color);
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+/* Selected Client Display */
+.selected-client {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgba(37, 211, 102, 0.1);
+    border: 1px solid var(--primary-dark);
+    padding: 12px;
+    border-radius: 8px;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* Items List */
+.items-list {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.item-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    /* Align top for multiline */
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: 1px solid transparent;
+}
+
+.item-card:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+    /* Stack code/qty and comment */
+    gap: 4px;
+}
+
+.item-comment-preview {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.item-code {
+    font-weight: bold;
+}
+
+.item-qty {
+    color: var(--text-secondary);
+}
+
+.delete-btn {
+    color: var(--danger-color);
+    padding: 0 8px;
+    margin-top: 2px;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    padding: 24px;
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+}
+
+.hidden {
+    display: none !important;
+}
+</style>
+  
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" type="image/png" href="icon.png">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Reporte de Roturas MyL</h1>
+        <button id="settingsBtn" class="icon-btn" style="font-size: 1.5rem;">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>Configuración</h2>
+        <div class="form-group">
+          <label for="phoneInput">Teléfono Destino (con código país)</label>
+          <input type="tel" id="phoneInput" placeholder="Ej: 34600123456">
+          <small style="color: #aaa; display: block; margin-top: 4px;">Sin el símbolo +</small>
+        </div>
+        <div class="action-area" style="margin-top: 16px;">
+          <button id="saveSettingsBtn" class="btn primary full-width">Guardar</button>
+          <button id="closeSettingsBtn" class="btn secondary full-width" style="margin-top: 8px;">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <main>
+      <!-- Order Section -->
+      <section class="card">
+        <div class="form-group">
+          <label for="orderNumber">Pedido / Factura (Opcional)</label>
+          <input type="text" id="orderNumber" placeholder="Ej: 123456" inputmode="text">
+        </div>
+      </section>
+
+
+      <!-- Client Section -->
+      <section class="card">
+        <div class="form-group relative">
+          <label for="clientSearch">Cliente</label>
+          <input type="text" id="clientSearch" placeholder="Buscar por nombre o código..." autocomplete="off">
+          <div id="clientSuggestions" class="suggestions-list hidden"></div>
+        </div>
+        <div id="selectedClientDisplay" class="selected-client hidden">
+          <span id="selectedClientName"></span>
+          <button id="clearClientBtn" class="icon-btn">&times;</button>
+        </div>
+      </section>
+
+      <!-- Items Section -->
+      <section class="card">
+        <h2>Artículos con Rotura</h2>
+        <div class="item-input-row">
+          <div class="form-group grow">
+            <label for="itemCode">Cód. Artículo</label>
+            <input type="text" id="itemCode" placeholder="Código">
+          </div>
+          <div class="form-group shrink">
+            <label for="itemQty">Cant.</label>
+            <input type="number" id="itemQty" placeholder="1" value="" min="1" inputmode="numeric">
+          </div>
+        </div>
+        <!-- Per-item comment -->
+        <div class="form-group">
+          <input type="text" id="itemComment" placeholder="Comentario para este artículo (opcional)">
+        </div>
+
+        <button id="addItemBtn" class="btn secondary full-width">+ Añadir Artículo</button>
+
+        <div id="itemsList" class="items-list">
+          <!-- Items will be added here -->
+        </div>
+      </section>
+
+      <!-- Action Section -->
+
+      <div class="action-area">
+        <button id="sendBtn" class="btn primary full-width">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path
+              d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.029.575 1.943.84 3.071.841 3.18 0 5.767-2.587 5.767-5.766.001-3.182-2.585-5.769-5.766-5.769zm9.318 9.319c1.697-3.181 1.084-7.202-1.747-9.721-2.903-2.585-7.377-2.576-10.264.02-2.738 2.463-3.415 6.471-1.746 9.682l-2.091 7.636 7.822-2.051c1.293.425 2.593.593 3.846.593 3.197 0 6.182-1.282 8.356-3.486 1.487-1.508 2.306-3.488 2.306-5.619 0-1.896-.645-3.692-1.803-5.263l-.679 8.216z" />
+          </svg>
+          Enviar WhatsApp
+        </button>
+        <div style="text-align: center; margin-top: 12px; font-size: 0.85rem; color: #888;">
+          Enviando a: <span id="currentPhoneDisplay" style="color: #ccc;">...</span>
+          <button id="changePhoneBtn"
+            style="background:none; border:none; color: var(--accent-color); text-decoration: underline; cursor: pointer; margin-left: 4px; font-size: 0.85rem;">(Cambiar)</button>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script>
+const clients = [
+  {
+    "code": "17788",
+    "name": "AELIA DUTY FREE - OVIEDO"
+  },
+  {
+    "code": "18159",
+    "name": "RELAY - TIENDA Nº 5.026"
+  },
+  {
+    "code": "17789",
+    "name": "AELIA DUTY FREE - SANTANDER"
+  },
+  {
+    "code": "10872",
+    "name": "E.S. MATAPORQUERA (Nº 11909)"
+  },
+  {
+    "code": "15932",
+    "name": "ADENOR ASTURIAS"
+  },
+  {
+    "code": "348",
+    "name": "CLIENTE ERROR GALP LOLO"
+  },
+  {
+    "code": "12397",
+    "name": "COMERCIAL TEXEO"
+  },
+  {
+    "code": "16299",
+    "name": "LIU ASIA"
+  },
+  {
+    "code": "14188",
+    "name": "GLOBAL VISADO"
+  },
+  {
+    "code": "15664",
+    "name": "FUNDACIÓN CABRALES"
+  },
+  {
+    "code": "3635",
+    "name": "LA TIENDA NUEVA"
+  },
+  {
+    "code": "9316",
+    "name": "E.S. ARMUNIA (Nº 00000)"
+  },
+  {
+    "code": "9933",
+    "name": "E.S. ARMUNIA M.I. (Nº 00000)"
+  },
+  {
+    "code": "12235",
+    "name": "ZENIT EXPERIENCIAS"
+  },
+  {
+    "code": "12360",
+    "name": "AIPOL AVENTURA"
+  },
+  {
+    "code": "1788",
+    "name": "FERRETERÍA FALO"
+  },
+  {
+    "code": "2094",
+    "name": "AREA SELLASTURES"
+  },
+  {
+    "code": "2997",
+    "name": "HOTEL LOS ACEBOS"
+  },
+  {
+    "code": "14477",
+    "name": "MUSICAL ZARABANDA"
+  },
+  {
+    "code": "16002",
+    "name": "UNA PAUSA EN EL CAMINO"
+  },
+  {
+    "code": "3573",
+    "name": "CHOCOLATERIA LA ERGASTULA ROMANA"
+  },
+  {
+    "code": "9317",
+    "name": "E.S. ASTORGA (Nº 11020 )"
+  },
+  {
+    "code": "14154",
+    "name": "ULTREIA Y SUSEIA UNIPESSOAL LDA"
+  },
+  {
+    "code": "14099",
+    "name": "J&L MASPALOMAS"
+  },
+  {
+    "code": "16427",
+    "name": "REGALOS VENUS"
+  },
+  {
+    "code": "16431",
+    "name": "HOTEL 40 NUDOS"
+  },
+  {
+    "code": "18923",
+    "name": "TIZA Y PEONZA"
+  },
+  {
+    "code": "6067",
+    "name": "TODO ASTUR"
+  },
+  {
+    "code": "6290",
+    "name": "BAZAR CHINO"
+  },
+  {
+    "code": "6390",
+    "name": "CANAL FOTO"
+  },
+  {
+    "code": "6571",
+    "name": "J&L"
+  },
+  {
+    "code": "17265",
+    "name": "NATIVIDAD BERNARDO BERNARDO"
+  },
+  {
+    "code": "16457",
+    "name": "LA ANJANA"
+  },
+  {
+    "code": "18359",
+    "name": "EL MUSGOSO"
+  },
+  {
+    "code": "13627",
+    "name": "TERRALMAR"
+  },
+  {
+    "code": "16642",
+    "name": "GRAN HOTEL CELA"
+  },
+  {
+    "code": "18838",
+    "name": "TIENDA EL TEYERU"
+  },
+  {
+    "code": "15335",
+    "name": "BAZAR COSUCAS"
+  },
+  {
+    "code": "12705",
+    "name": "TIENDAS IGO´S"
+  },
+  {
+    "code": "5498",
+    "name": "E.S. MERUELO SL"
+  },
+  {
+    "code": "19262",
+    "name": "CLIC CLAC"
+  },
+  {
+    "code": "14183",
+    "name": "MARILUZ CADENAS MENDEZ"
+  },
+  {
+    "code": "9576",
+    "name": "E.S. CABORANA (Nº 11692)"
+  },
+  {
+    "code": "15489",
+    "name": "SUPERMERCADO LA RUTA"
+  },
+  {
+    "code": "3884",
+    "name": "ARTESANIA LA RUTA"
+  },
+  {
+    "code": "8623",
+    "name": "E.S. CALDAS DE LUNA (Nº 10610)"
+  },
+  {
+    "code": "14357",
+    "name": "EL PASEIN"
+  },
+  {
+    "code": "15339",
+    "name": "YING CHEN"
+  },
+  {
+    "code": "18301",
+    "name": "PIMPONETI ART"
+  },
+  {
+    "code": "3958",
+    "name": "E. MORODO"
+  },
+  {
+    "code": "11228",
+    "name": "EL ESBARDU"
+  },
+  {
+    "code": "16547",
+    "name": "TV JAIME"
+  },
+  {
+    "code": "17488",
+    "name": "LOS CAUCES"
+  },
+  {
+    "code": "1754",
+    "name": "SOUVENIRS PICOS DE EUROPA"
+  },
+  {
+    "code": "18027",
+    "name": "EL BARATO"
+  },
+  {
+    "code": "528",
+    "name": "ASTURIAS ENCANTADA CANGAS"
+  },
+  {
+    "code": "521",
+    "name": "EL MERCAO"
+  },
+  {
+    "code": "561",
+    "name": "ASTURIAS ENCANTADA ALMACEN"
+  },
+  {
+    "code": "9028",
+    "name": "LES CAMISETES CAYARGA"
+  },
+  {
+    "code": "9828",
+    "name": "REY PELAYO REGALOS"
+  },
+  {
+    "code": "9445",
+    "name": "E.S. MONTICO II (Nº 11258)"
+  },
+  {
+    "code": "2774",
+    "name": "EL PORTICO"
+  },
+  {
+    "code": "10688",
+    "name": "E.S. CARTES (Nº 11534)"
+  },
+  {
+    "code": "16850",
+    "name": "LA CASA DEL EMBUTIDO"
+  },
+  {
+    "code": "14721",
+    "name": "ESTANCO MARIA SOLEDAD"
+  },
+  {
+    "code": "15727",
+    "name": "LA ESQUINA"
+  },
+  {
+    "code": "17255",
+    "name": "COLORETES"
+  },
+  {
+    "code": "10566",
+    "name": "E.S. VALDALIGA M.D. (Nº 11383)"
+  },
+  {
+    "code": "10724",
+    "name": "E.S. VALDALIGA M.I. (Nº 11384)"
+  },
+  {
+    "code": "7821",
+    "name": "TRASTOLILLO"
+  },
+  {
+    "code": "9336",
+    "name": "E.S. CISTIERNA (Nº 00000)"
+  },
+  {
+    "code": "17763",
+    "name": "CONSERVAS VELMAR"
+  },
+  {
+    "code": "17331",
+    "name": "E.S. COLUNGA (Nº11980)"
+  },
+  {
+    "code": "11559",
+    "name": "LA VACA DE COMILLAS"
+  },
+  {
+    "code": "14149",
+    "name": "TRASGO"
+  },
+  {
+    "code": "15570",
+    "name": "CANTABROASTUR"
+  },
+  {
+    "code": "16190",
+    "name": "ALMA DE MAR"
+  },
+  {
+    "code": "18874",
+    "name": "CAPRICHOS"
+  },
+  {
+    "code": "18930",
+    "name": "FOTO ROZAS"
+  },
+  {
+    "code": "19204",
+    "name": "BAR LA PERLA NEGRA"
+  },
+  {
+    "code": "18839",
+    "name": "EL OSO ROJO CORNELLANA"
+  },
+  {
+    "code": "15615",
+    "name": "QUIOSCO BEGOÑA"
+  },
+  {
+    "code": "16053",
+    "name": "KIOSCO Nº3"
+  },
+  {
+    "code": "18028",
+    "name": "EXPENDEDURIA DE COVADONGA"
+  },
+  {
+    "code": "5634",
+    "name": "QUIOSCO Nº 1 Y 2"
+  },
+  {
+    "code": "851",
+    "name": "QUIOSCO CARLOS"
+  },
+  {
+    "code": "14201",
+    "name": "ARTE Y MAR"
+  },
+  {
+    "code": "16586",
+    "name": "LA CASA DE JULIA"
+  },
+  {
+    "code": "18198",
+    "name": "ESTANCO CUDILLERO"
+  },
+  {
+    "code": "18380",
+    "name": "KIOSCO IGNACIO"
+  },
+  {
+    "code": "19412",
+    "name": "RELOJERIA CEBALLOS"
+  },
+  {
+    "code": "15932",
+    "name": "ADENOR ASTURIAS"
+  },
+  {
+    "code": "16023",
+    "name": "BAZAR SAN MARTIN"
+  },
+  {
+    "code": "9647",
+    "name": "E.S. EL ENTREGO (Nº 10561)"
+  },
+  {
+    "code": "5296",
+    "name": "CASA CLARA"
+  },
+  {
+    "code": "8164",
+    "name": "PETROPRIN"
+  },
+  {
+    "code": "17628",
+    "name": "BELEN CANEL MADARRO"
+  },
+  {
+    "code": "14704",
+    "name": "EL ZOCO"
+  },
+  {
+    "code": "15801",
+    "name": "DANIEL ROSELL NOGALES"
+  },
+  {
+    "code": "4663",
+    "name": "OFIFOZ"
+  },
+  {
+    "code": "9383",
+    "name": "E.S. LUGONES (Nº 11200)"
+  },
+  {
+    "code": "3905",
+    "name": "EL PEREGRINO"
+  },
+  {
+    "code": "522",
+    "name": "A.E. DON PELAYO"
+  },
+  {
+    "code": "525",
+    "name": "ASTURIAS ENCANTADA GIJON"
+  },
+  {
+    "code": "11446",
+    "name": "ASTURIAS MAGICA"
+  },
+  {
+    "code": "13845",
+    "name": "HOTEL ARBEYAL"
+  },
+  {
+    "code": "13931",
+    "name": "HOTEL NORTE"
+  },
+  {
+    "code": "14068",
+    "name": "MUSEO DEL JURÁSICO DE ASTURIAS"
+  },
+  {
+    "code": "14227",
+    "name": "ARTESANIA ASTURIANA"
+  },
+  {
+    "code": "14804",
+    "name": "KIOSCO ADARO"
+  },
+  {
+    "code": "14825",
+    "name": "KIOSCO FAVILA"
+  },
+  {
+    "code": "16005",
+    "name": "OM"
+  },
+  {
+    "code": "16049",
+    "name": "FLORISTERIA LA JOVELLANA"
+  },
+  {
+    "code": "16595",
+    "name": "VULEVU"
+  },
+  {
+    "code": "16984",
+    "name": "KIROCOM"
+  },
+  {
+    "code": "17211",
+    "name": "LUNA NUEVA"
+  },
+  {
+    "code": "17212",
+    "name": "KE T´APUESTES?"
+  },
+  {
+    "code": "18530",
+    "name": "HABIA OTRA VEZ"
+  },
+  {
+    "code": "18676",
+    "name": "LA CESTA"
+  },
+  {
+    "code": "18911",
+    "name": "TIENDAS MARVELOUS"
+  },
+  {
+    "code": "5596",
+    "name": "REGALOS JIN HUA LIANG"
+  },
+  {
+    "code": "8760",
+    "name": "LOCIS SIGTECH SOLUCIONES SOSTENIBLES SLL VITAEVEN"
+  },
+  {
+    "code": "9384",
+    "name": "E.S. PUMARIN (Nº 11609)"
+  },
+  {
+    "code": "9402",
+    "name": "EL CANTABRICO"
+  },
+  {
+    "code": "9444",
+    "name": "E.S. LOS CAMPONES (Nº 11597)"
+  },
+  {
+    "code": "9559",
+    "name": "LIBRERIA DIOCESANA GIJON"
+  },
+  {
+    "code": "9846",
+    "name": "QUIOSCO MARY"
+  },
+  {
+    "code": "15665",
+    "name": "CAFE BAR EL PATIO"
+  },
+  {
+    "code": "16875",
+    "name": "PLANETA GOLOSO"
+  },
+  {
+    "code": "17611",
+    "name": "LA TIENDA DEL KORYNTO"
+  },
+  {
+    "code": "12628",
+    "name": "LILY COMPLEMENTOS"
+  },
+  {
+    "code": "9450",
+    "name": "E.S. GRANDA-GIJON (Nº 00000)"
+  },
+  {
+    "code": "16654",
+    "name": "PANRIS"
+  },
+  {
+    "code": "17474",
+    "name": "BAZAR ASIA BIN"
+  },
+  {
+    "code": "9934",
+    "name": "E.S. HERRERA (Nº 00000)"
+  },
+  {
+    "code": "15655",
+    "name": "SILVIA FERNANDEZ ABASCAL"
+  },
+  {
+    "code": "7384",
+    "name": "REGALOS IRANA"
+  },
+  {
+    "code": "18046",
+    "name": "ROSA ABEL PARAJON CANGA"
+  },
+  {
+    "code": "4779",
+    "name": "BAZAR EL HORREO"
+  },
+  {
+    "code": "12407",
+    "name": "EL ASUBIU"
+  },
+  {
+    "code": "10607",
+    "name": "E.S. LAREDO (Nº 10997)"
+  },
+  {
+    "code": "12907",
+    "name": "LOW COST LAREDO"
+  },
+  {
+    "code": "19331",
+    "name": "MAYU - DETALLES Y ENCANTOS"
+  },
+  {
+    "code": "5586",
+    "name": "TARANCO"
+  },
+  {
+    "code": "681",
+    "name": "FERRETERIA EL REGALO"
+  },
+  {
+    "code": "4798",
+    "name": "EL FARO"
+  },
+  {
+    "code": "548",
+    "name": "ASTURIAS ENCANTADA LASTRES"
+  },
+  {
+    "code": "18371",
+    "name": "E.S. FUENTE SILA (Nº 33303)"
+  },
+  {
+    "code": "10636",
+    "name": "BAZAR ASIA"
+  },
+  {
+    "code": "12738",
+    "name": "ELOY AREVALO GONZALEZ"
+  },
+  {
+    "code": "13108",
+    "name": "NAURA"
+  },
+  {
+    "code": "16737",
+    "name": "BAZAR JIXIANG II"
+  },
+  {
+    "code": "16850",
+    "name": "LA CASA DEL EMBUTIDO"
+  },
+  {
+    "code": "17936",
+    "name": "ESTANCO DE GUZMAN"
+  },
+  {
+    "code": "5232",
+    "name": "FOTOGRAFIA J.R."
+  },
+  {
+    "code": "5233",
+    "name": "LEON TIPICO"
+  },
+  {
+    "code": "9342",
+    "name": "E.S. PUENTE CASTRO (Nº 00000)"
+  },
+  {
+    "code": "9938",
+    "name": "E.S. LA SERNA DE LEON (Nº 11865)"
+  },
+  {
+    "code": "11845",
+    "name": "LA CASA DE LA BISA"
+  },
+  {
+    "code": "17059",
+    "name": "EL ALFAR"
+  },
+  {
+    "code": "15345",
+    "name": "HOTEL CIELOASTUR"
+  },
+  {
+    "code": "6596",
+    "name": "ASTURARCO 2012, SL"
+  },
+  {
+    "code": "9451",
+    "name": "E.S. SILVOTA (Nº 00000)"
+  },
+  {
+    "code": "10227",
+    "name": "ECUS"
+  },
+  {
+    "code": "17013",
+    "name": "RICO RICO"
+  },
+  {
+    "code": "17014",
+    "name": "ASTUR"
+  },
+  {
+    "code": "9443",
+    "name": "E.S. LLARANES (Nº 00000)"
+  },
+  {
+    "code": "14812",
+    "name": "RAFI"
+  },
+  {
+    "code": "11681",
+    "name": "CARTOY PRO APOYO"
+  },
+  {
+    "code": "12435",
+    "name": "FLORES AZALEA"
+  },
+  {
+    "code": "15949",
+    "name": "HONGYUAN MERCA"
+  },
+  {
+    "code": "19252",
+    "name": "LA MAR DE RECUERDOS"
+  },
+  {
+    "code": "3131",
+    "name": "MEDIO MARINO DE CABO PEÑAS"
+  },
+  {
+    "code": "6544",
+    "name": "SUPER EURO HON FU"
+  },
+  {
+    "code": "6545",
+    "name": "CHANG LIAN YE"
+  },
+  {
+    "code": "9385",
+    "name": "E.S. LUANCO (Nº 11043)"
+  },
+  {
+    "code": "928",
+    "name": "BAHIA 0"
+  },
+  {
+    "code": "104066",
+    "name": "AIGOR ROMO RODRIGUEZ"
+  },
+  {
+    "code": "14926",
+    "name": "BAHIA 19"
+  },
+  {
+    "code": "18472",
+    "name": "AIGOR ROMO RODRIGUEZ"
+  },
+  {
+    "code": "10566",
+    "name": "E.S. VALDALIGA M.D. (Nº 11383)"
+  },
+  {
+    "code": "10582",
+    "name": "E.S. CALLE CASTILLA (Nº 11412)"
+  },
+  {
+    "code": "10607",
+    "name": "E.S. LAREDO (Nº 10997)"
+  },
+  {
+    "code": "10627",
+    "name": "E.S. LOS OCHOS (Nº 00000)"
+  },
+  {
+    "code": "10688",
+    "name": "E.S. CARTES (Nº 11534)"
+  },
+  {
+    "code": "10690",
+    "name": "E.S. MONTICO I (Nº 11259)"
+  },
+  {
+    "code": "10724",
+    "name": "E.S. VALDALIGA M.I. (Nº 11384)"
+  },
+  {
+    "code": "10872",
+    "name": "E.S. MATAPORQUERA (Nº 11909)"
+  },
+  {
+    "code": "11029",
+    "name": "E.S. LA ALBERICIA (Nº 10647)"
+  },
+  {
+    "code": "13332",
+    "name": "CORREOS OVIEDO"
+  },
+  {
+    "code": "14058",
+    "name": "E.S. ESTRAMBASAGUAS (Nº 11081)"
+  },
+  {
+    "code": "14060",
+    "name": "E.S. LA CERRADA (Nº 11474)"
+  },
+  {
+    "code": "17331",
+    "name": "E.S. COLUNGA (Nº11980)"
+  },
+  {
+    "code": "8612",
+    "name": "E.S. VILLAVIDEL M.I. (Nº 00000)"
+  },
+  {
+    "code": "8623",
+    "name": "E.S. CALDAS DE LUNA (Nº 10610)"
+  },
+  {
+    "code": "8635",
+    "name": "E.S. RIOSECO DE TAPIA (Nº 10611)"
+  },
+  {
+    "code": "8636",
+    "name": "E.S. RIOSECO II (Nº 00000)"
+  },
+  {
+    "code": "8645",
+    "name": "E.S. VILLAVIDEL M.D. (Nº 11428)"
+  },
+  {
+    "code": "9316",
+    "name": "E.S. ARMUNIA (Nº 00000)"
+  },
+  {
+    "code": "9317",
+    "name": "E.S. ASTORGA (Nº 11020 )"
+  },
+  {
+    "code": "9336",
+    "name": "E.S. CISTIERNA (Nº 00000)"
+  },
+  {
+    "code": "9337",
+    "name": "E.S. VILLAOBISPO (Nº 00000)"
+  },
+  {
+    "code": "9340",
+    "name": "E.S. SAN JUAN DE DIOS (Nº 00000)"
+  },
+  {
+    "code": "9342",
+    "name": "E.S. PUENTE CASTRO (Nº 00000)"
+  },
+  {
+    "code": "9383",
+    "name": "E.S. LUGONES (Nº 11200)"
+  },
+  {
+    "code": "9384",
+    "name": "E.S. PUMARIN (Nº 11609)"
+  },
+  {
+    "code": "9385",
+    "name": "E.S. LUANCO (Nº 11043)"
+  },
+  {
+    "code": "9386",
+    "name": "E.S. LA TENDERINA (Nº 10665)"
+  },
+  {
+    "code": "9387",
+    "name": "E.S. ROBLEDO II (Nº 11424)"
+  },
+  {
+    "code": "9443",
+    "name": "E.S. LLARANES (Nº 00000)"
+  },
+  {
+    "code": "9444",
+    "name": "E.S. LOS CAMPONES (Nº 11597)"
+  },
+  {
+    "code": "9445",
+    "name": "E.S. MONTICO II (Nº 11258)"
+  },
+  {
+    "code": "9446",
+    "name": "E.S. CERDEÑO (Nº 11701)"
+  },
+  {
+    "code": "9447",
+    "name": "E.S. ROBLEDO I (Nº 11423)"
+  },
+  {
+    "code": "9448",
+    "name": "E.S. NAVIA (Nº 10299)"
+  },
+  {
+    "code": "9449",
+    "name": "E.S. LOS CAMPOS (Nº 00000)"
+  },
+  {
+    "code": "9450",
+    "name": "E.S. GRANDA-GIJON (Nº 00000)"
+  },
+  {
+    "code": "9451",
+    "name": "E.S. SILVOTA (Nº 00000)"
+  },
+  {
+    "code": "9452",
+    "name": "E.S. MIERES (Nº 11687)"
+  },
+  {
+    "code": "9531",
+    "name": "E.S. PARQUEASTUR (Nº 11100)"
+  },
+  {
+    "code": "9576",
+    "name": "E.S. CABORANA (Nº 11692)"
+  },
+  {
+    "code": "9647",
+    "name": "E.S. EL ENTREGO (Nº 10561)"
+  },
+  {
+    "code": "9652",
+    "name": "E.S. AVDA. ASTURIAS (Nº 00000)"
+  },
+  {
+    "code": "9667",
+    "name": "E.S. PONTON DE VAQUEROS (Nº 00000)"
+  },
+  {
+    "code": "9672",
+    "name": "E.S. MONDOÑEDO (Nº 11411)"
+  },
+  {
+    "code": "9933",
+    "name": "E.S. ARMUNIA M.I. (Nº 00000)"
+  },
+  {
+    "code": "9934",
+    "name": "E.S. HERRERA (Nº 00000)"
+  },
+  {
+    "code": "9938",
+    "name": "E.S. LA SERNA DE LEON (Nº 11865)"
+  },
+  {
+    "code": "11311",
+    "name": "COME & FLY. LA TIENDA DEL AEROPUERTO SEVE BALLESTE"
+  },
+  {
+    "code": "14060",
+    "name": "E.S. LA CERRADA (Nº 11474)"
+  },
+  {
+    "code": "16054",
+    "name": "OCHI Y MARIA"
+  },
+  {
+    "code": "16986",
+    "name": "LABERINTO"
+  },
+  {
+    "code": "9452",
+    "name": "E.S. MIERES (Nº 11687)"
+  },
+  {
+    "code": "9719",
+    "name": "GOMILOLAS"
+  },
+  {
+    "code": "9672",
+    "name": "E.S. MONDOÑEDO (Nº 11411)"
+  },
+  {
+    "code": "17477",
+    "name": "CASA REGINA"
+  },
+  {
+    "code": "8010",
+    "name": "ESTANCO CASA CARI"
+  },
+  {
+    "code": "9152",
+    "name": "ESTANCO ALBA"
+  },
+  {
+    "code": "9448",
+    "name": "E.S. NAVIA (Nº 10299)"
+  },
+  {
+    "code": "18796",
+    "name": "ESPIRAL MODA Y REGALOS"
+  },
+  {
+    "code": "7436",
+    "name": "BAZAR XIN DA"
+  },
+  {
+    "code": "11583",
+    "name": "GASOLINERA NOVELLANA"
+  },
+  {
+    "code": "18365",
+    "name": "COSINAS DE ASTURIAS"
+  },
+  {
+    "code": "6872",
+    "name": "EL TEXIEU"
+  },
+  {
+    "code": "8612",
+    "name": "E.S. VILLAVIDEL M.I. (Nº 00000)"
+  },
+  {
+    "code": "8645",
+    "name": "E.S. VILLAVIDEL M.D. (Nº 11428)"
+  },
+  {
+    "code": "11719",
+    "name": "ALFREDO ALVAREZ"
+  },
+  {
+    "code": "11806",
+    "name": "CARAMELO"
+  },
+  {
+    "code": "12995",
+    "name": "ESTANCO EL GALEON"
+  },
+  {
+    "code": "13024",
+    "name": "LA BOMBA RECORDS"
+  },
+  {
+    "code": "13332",
+    "name": "CORREOS OVIEDO"
+  },
+  {
+    "code": "13443",
+    "name": "KIOSCO COLIBRI"
+  },
+  {
+    "code": "14154",
+    "name": "ULTREIA Y SUSEIA UNIPESSOAL LDA"
+  },
+  {
+    "code": "15075",
+    "name": "PAIS DOBLE"
+  },
+  {
+    "code": "15311",
+    "name": "MANGOR"
+  },
+  {
+    "code": "15953",
+    "name": "EL TREN DE VAPOR"
+  },
+  {
+    "code": "15972",
+    "name": "SERENDIPIA"
+  },
+  {
+    "code": "17637",
+    "name": "LIBRERIA DIOCESANA"
+  },
+  {
+    "code": "18407",
+    "name": "SUCUBUS"
+  },
+  {
+    "code": "18430",
+    "name": "EXPENDEDURIA N. 55"
+  },
+  {
+    "code": "18431",
+    "name": "TRIBU"
+  },
+  {
+    "code": "545",
+    "name": "ASTURIAS ENCANTADA OVIEDO"
+  },
+  {
+    "code": "18729",
+    "name": "TODO ASTURIAS"
+  },
+  {
+    "code": "18823",
+    "name": "LIBRERIA ANTARES"
+  },
+  {
+    "code": "19019",
+    "name": "CATEDRAL DE OVIEDO"
+  },
+  {
+    "code": "19364",
+    "name": "CRESVI, SA"
+  },
+  {
+    "code": "19488",
+    "name": "TOLON TOLON"
+  },
+  {
+    "code": "210",
+    "name": "CLIENTE ERROR LOLO ASTURIAS"
+  },
+  {
+    "code": "3615",
+    "name": "ALCORDANCES DE ASTURIES"
+  },
+  {
+    "code": "742",
+    "name": "TRISQUEL"
+  },
+  {
+    "code": "751",
+    "name": "CRIVENCAR, S.L."
+  },
+  {
+    "code": "9386",
+    "name": "E.S. LA TENDERINA (Nº 10665)"
+  },
+  {
+    "code": "9446",
+    "name": "E.S. CERDEÑO (Nº 11701)"
+  },
+  {
+    "code": "9667",
+    "name": "E.S. PONTON DE VAQUEROS (Nº 00000)"
+  },
+  {
+    "code": "17324",
+    "name": "INFANTE"
+  },
+  {
+    "code": "11462",
+    "name": "REGALOS SANCHO"
+  },
+  {
+    "code": "9652",
+    "name": "E.S. AVDA. ASTURIAS (Nº 00000)"
+  },
+  {
+    "code": "658",
+    "name": "COVADONGA"
+  },
+  {
+    "code": "13794",
+    "name": "PREHOTI COOPERATIVA VALENCIANA"
+  },
+  {
+    "code": "9531",
+    "name": "E.S. PARQUEASTUR (Nº 11100)"
+  },
+  {
+    "code": "14243",
+    "name": "ANTONIO DOS SANTOS"
+  },
+  {
+    "code": "14244",
+    "name": "CARLOS ALBERTO CORREIA"
+  },
+  {
+    "code": "14245",
+    "name": "ARMANDO FERNANDO CORREIA"
+  },
+  {
+    "code": "14246",
+    "name": "DINIS FERNANDO FERNANDEZ"
+  },
+  {
+    "code": "104070",
+    "name": "BAZAR CHINA"
+  },
+  {
+    "code": "16022",
+    "name": "HOME"
+  },
+  {
+    "code": "18653",
+    "name": "BAZAR CHINA"
+  },
+  {
+    "code": "18947",
+    "name": "TUTTI EL PARQUE"
+  },
+  {
+    "code": "17400",
+    "name": "HECHIZOS REGALOS"
+  },
+  {
+    "code": "1416",
+    "name": "CASA SENI"
+  },
+  {
+    "code": "16240",
+    "name": "ORIGEN & ESPIGA"
+  },
+  {
+    "code": "10290",
+    "name": "CARMEN PEREZ VILAN"
+  },
+  {
+    "code": "11853",
+    "name": "CASA REVUELTA"
+  },
+  {
+    "code": "14342",
+    "name": "LA TIENDA DE NURIA"
+  },
+  {
+    "code": "15237",
+    "name": "BUSTAMANTE"
+  },
+  {
+    "code": "16389",
+    "name": "FERRETERÍA GUTIÉRREZ FERNÁNDEZ"
+  },
+  {
+    "code": "16580",
+    "name": "KIOSCO LA SERNA"
+  },
+  {
+    "code": "2468",
+    "name": "CANELA"
+  },
+  {
+    "code": "4232",
+    "name": "FERRETERIA CETO"
+  },
+  {
+    "code": "663",
+    "name": "CASA WENCES"
+  },
+  {
+    "code": "9658",
+    "name": "VENERANDA DE COS DOBARGANES"
+  },
+  {
+    "code": "16015",
+    "name": "GRAN BAZAR ANGELA"
+  },
+  {
+    "code": "16642",
+    "name": "GRAN HOTEL CELA"
+  },
+  {
+    "code": "6949",
+    "name": "CHAROL"
+  },
+  {
+    "code": "16867",
+    "name": "COMIBERSA"
+  },
+  {
+    "code": "9637",
+    "name": "PRENDES OIL, SL"
+  },
+  {
+    "code": "2600",
+    "name": "CASA CAMILO"
+  },
+  {
+    "code": "1160",
+    "name": "CASA MORÁN"
+  },
+  {
+    "code": "11835",
+    "name": "BAR-TIENDA LA VENTA LOS PROBES"
+  },
+  {
+    "code": "18746",
+    "name": "LA TIENDA VIOLETA"
+  },
+  {
+    "code": "8188",
+    "name": "BAZAR EL REY"
+  },
+  {
+    "code": "6623",
+    "name": "LLAGAR CASTAÑON"
+  },
+  {
+    "code": "10203",
+    "name": "MIGUEL ANGEL CUEVAS LOPEZ"
+  },
+  {
+    "code": "18389",
+    "name": "REGALOS GOMEZ"
+  },
+  {
+    "code": "8317",
+    "name": "JOSE MANUEL GUTIERREZ"
+  },
+  {
+    "code": "13794",
+    "name": "PREHOTI COOPERATIVA VALENCIANA"
+  },
+  {
+    "code": "15801",
+    "name": "DANIEL ROSELL NOGALES"
+  },
+  {
+    "code": "16466",
+    "name": "PICAROLAS"
+  },
+  {
+    "code": "17995",
+    "name": "GONZALO SANTIAGO RODRIGUEZ VAQUERIZO"
+  },
+  {
+    "code": "15296",
+    "name": "TIENDA L´HORRU"
+  },
+  {
+    "code": "19157",
+    "name": "BAZAR ALARA REGALOS Y SOUVENIR"
+  },
+  {
+    "code": "526",
+    "name": "ASTURIAS ENCANTADA RIBADESELLA"
+  },
+  {
+    "code": "5470",
+    "name": "GECKO"
+  },
+  {
+    "code": "12242",
+    "name": "A NASA"
+  },
+  {
+    "code": "8635",
+    "name": "E.S. RIOSECO DE TAPIA (Nº 10611)"
+  },
+  {
+    "code": "8636",
+    "name": "E.S. RIOSECO II (Nº 00000)"
+  },
+  {
+    "code": "15276",
+    "name": "JUAN ANTONIO ROSELL NOGALES"
+  },
+  {
+    "code": "18521",
+    "name": "E.S. LA CARIDAD"
+  },
+  {
+    "code": "9340",
+    "name": "E.S. SAN JUAN DE DIOS (Nº 00000)"
+  },
+  {
+    "code": "16026",
+    "name": "BAZAR AYALGA"
+  },
+  {
+    "code": "18483",
+    "name": "ESTANCO AM"
+  },
+  {
+    "code": "15885",
+    "name": "GRAN BAZAR SAN ANDRÉS"
+  },
+  {
+    "code": "14106",
+    "name": "BAZAR ALIMENTACION"
+  },
+  {
+    "code": "14068",
+    "name": "MUSEO DEL JURÁSICO DE ASTURIAS"
+  },
+  {
+    "code": "18472",
+    "name": "AIGOR ROMO RODRIGUEZ"
+  },
+  {
+    "code": "16155",
+    "name": "JORGE MARTINEZ OBRADORS"
+  },
+  {
+    "code": "16690",
+    "name": "HELADERIA LA MURALLA"
+  },
+  {
+    "code": "2210",
+    "name": "REGALOS EL CASTILLO"
+  },
+  {
+    "code": "9690",
+    "name": "ELECTRONICA LLERA"
+  },
+  {
+    "code": "9449",
+    "name": "E.S. LOS CAMPOS (Nº 00000)"
+  },
+  {
+    "code": "18098",
+    "name": "CASERIO VIDUEDO"
+  },
+  {
+    "code": "14058",
+    "name": "E.S. ESTRAMBASAGUAS (Nº 11081)"
+  },
+  {
+    "code": "9387",
+    "name": "E.S. ROBLEDO II (Nº 11424)"
+  },
+  {
+    "code": "9447",
+    "name": "E.S. ROBLEDO I (Nº 11423)"
+  },
+  {
+    "code": "10582",
+    "name": "E.S. CALLE CASTILLA (Nº 11412)"
+  },
+  {
+    "code": "11029",
+    "name": "E.S. LA ALBERICIA (Nº 10647)"
+  },
+  {
+    "code": "13349",
+    "name": "REGALOS MICHEL"
+  },
+  {
+    "code": "13642",
+    "name": "DONIS"
+  },
+  {
+    "code": "15748",
+    "name": "BAZAR FAMILIA"
+  },
+  {
+    "code": "16139",
+    "name": "ESTANCO MACHICHACO"
+  },
+  {
+    "code": "16806",
+    "name": "MASTER CIEN"
+  },
+  {
+    "code": "17264",
+    "name": "KIOSCO CHARO"
+  },
+  {
+    "code": "17600",
+    "name": "GODOFREDO"
+  },
+  {
+    "code": "1790",
+    "name": "BURBUJAS"
+  },
+  {
+    "code": "19378",
+    "name": "BAZAR FAMILIA"
+  },
+  {
+    "code": "2299",
+    "name": "PLASTICOS PLEX"
+  },
+  {
+    "code": "4829",
+    "name": "HELADOS QUIYU"
+  },
+  {
+    "code": "6778",
+    "name": "EUROSHOP"
+  },
+  {
+    "code": "8664",
+    "name": "COPPEN"
+  },
+  {
+    "code": "9758",
+    "name": "BAZAR EL VECINO"
+  },
+  {
+    "code": "10546",
+    "name": "LUZMARI BIELVA PUENTE"
+  },
+  {
+    "code": "1096",
+    "name": "BAZAR COLEGIATA"
+  },
+  {
+    "code": "11178",
+    "name": "DA VINCI"
+  },
+  {
+    "code": "11536",
+    "name": "BAZAR COLEGIATA"
+  },
+  {
+    "code": "13600",
+    "name": "EDUARDO ANSORENA ECHEVARRIA"
+  },
+  {
+    "code": "13893",
+    "name": "MUSEO BARQUILLERO, SC"
+  },
+  {
+    "code": "15735",
+    "name": "BAZAR COBO"
+  },
+  {
+    "code": "16593",
+    "name": "MERCADOS TEMATICOS ABALON"
+  },
+  {
+    "code": "18262",
+    "name": "ARTESANIA Y AROMAS ANSORENA"
+  },
+  {
+    "code": "1911",
+    "name": "BAZAR EL DESEO"
+  },
+  {
+    "code": "1970",
+    "name": "CERÁMICA OTERO"
+  },
+  {
+    "code": "2167",
+    "name": "EL RIO"
+  },
+  {
+    "code": "9624",
+    "name": "ARTESANIAS ANSORENA"
+  },
+  {
+    "code": "11623",
+    "name": "MOOREA SURF"
+  },
+  {
+    "code": "12318",
+    "name": "BAZAR EUROMAR"
+  },
+  {
+    "code": "12099",
+    "name": "EL KIOSKO DE NATI"
+  },
+  {
+    "code": "15547",
+    "name": "BAZAR COSAS DE CASA"
+  },
+  {
+    "code": "10690",
+    "name": "E.S. MONTICO I (Nº 11259)"
+  },
+  {
+    "code": "12057",
+    "name": "TUTTI FRUTTI CHARO"
+  },
+  {
+    "code": "8188",
+    "name": "BAZAR EL REY"
+  },
+  {
+    "code": "14872",
+    "name": "DELICIAS DE TARAMUNDI"
+  },
+  {
+    "code": "15204",
+    "name": "EL PUESTIN DE TARAMUNDI"
+  },
+  {
+    "code": "17817",
+    "name": "A XANUCA"
+  },
+  {
+    "code": "2117",
+    "name": "FERRETERÍA LEGAZPI"
+  },
+  {
+    "code": "6036",
+    "name": "EVA M. RODRIGUEZ RODIL"
+  },
+  {
+    "code": "632",
+    "name": "CASA VICENTE, C.B."
+  },
+  {
+    "code": "7840",
+    "name": "ARTESANIA  TELAR"
+  },
+  {
+    "code": "12851",
+    "name": "CASA VIÑES"
+  },
+  {
+    "code": "16725",
+    "name": "GUARNICIONERIA Y ARTESANIA SANZ"
+  },
+  {
+    "code": "10627",
+    "name": "E.S. LOS OCHOS (Nº 00000)"
+  },
+  {
+    "code": "17011",
+    "name": "REGALIZ"
+  },
+  {
+    "code": "837",
+    "name": "CARRUSELAMBRA"
+  },
+  {
+    "code": "15701",
+    "name": "EURODOA"
+  },
+  {
+    "code": "13608",
+    "name": "HOTEL OSCOS"
+  },
+  {
+    "code": "15479",
+    "name": "TIENDA OSCOS"
+  },
+  {
+    "code": "9337",
+    "name": "E.S. VILLAOBISPO (Nº 00000)"
+  },
+  {
+    "code": "10751",
+    "name": "BAZAR NAVATEJERA"
+  },
+  {
+    "code": "1047",
+    "name": "FERRETERÍA JUAN S. MIGUEL"
+  },
+  {
+    "code": "18158",
+    "name": "PATRICIA TORRIJOS FERNANDEZ"
+  },
+  {
+    "code": "1",
+    "name": "GRAN CLIENTE ASTURIAS"
+  },
+  {
+    "code": "101",
+    "name": "OFERTA DESCUENTO DEL IVA"
+  }
+];
+
+
+
+
+// --- Configuration ---
+const CONFIG = {
+    // Default to empty, will load from localStorage
+    get WHATSAPP_PHONE() {
+        return localStorage.getItem('roturas_target_phone') || '';
+    }
+};
+
+// --- State ---
+let state = {
+    orderNumber: '',
+    selectedClient: null,
+    items: [],
+    isSettingsOpen: false
+};
+
+// --- Global DOM Elements Reference ---
+// Define 'els' at the top level so it is accessible to all functions.
+// Using var to avoid Temporal Dead Zone issues in bundled script
+var els;
+
+// --- Initialization ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Capture DOM elements
+    els = {
+        orderInput: document.getElementById('orderNumber'),
+        clientSearchData: document.getElementById('clientSearch'),
+        clientSuggestions: document.getElementById('clientSuggestions'),
+        selectedClientDisplay: document.getElementById('selectedClientDisplay'),
+        selectedClientName: document.getElementById('selectedClientName'),
+        clearClientBtn: document.getElementById('clearClientBtn'),
+        itemCodeInput: document.getElementById('itemCode'),
+        itemQtyInput: document.getElementById('itemQty'),
+        itemCommentInput: document.getElementById('itemComment'),
+        addItemBtn: document.getElementById('addItemBtn'),
+        itemsList: document.getElementById('itemsList'),
+
+        sendBtn: document.getElementById('sendBtn'),
+        // Settings elements
+        settingsBtn: document.getElementById('settingsBtn'),
+        settingsModal: document.getElementById('settingsModal'),
+        closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+        saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+        phoneInput: document.getElementById('phoneInput'),
+        currentPhoneDisplay: document.getElementById('currentPhoneDisplay'),
+        changePhoneBtn: document.getElementById('changePhoneBtn')
+    };
+
+    // 2. Attach Event Listeners (safely checking existence)
+    if (els.orderInput) els.orderInput.addEventListener('input', (e) => state.orderNumber = e.target.value);
+
+    // Settings
+    if (els.settingsBtn) els.settingsBtn.addEventListener('click', openSettings);
+    if (els.closeSettingsBtn) els.closeSettingsBtn.addEventListener('click', closeSettings);
+    if (els.saveSettingsBtn) els.saveSettingsBtn.addEventListener('click', saveSettings);
+    if (els.changePhoneBtn) els.changePhoneBtn.addEventListener('click', openSettings);
+
+    // Client Search
+    if (els.clientSearchData) els.clientSearchData.addEventListener('input', handleClientSearch);
+    if (els.clearClientBtn) els.clearClientBtn.addEventListener('click', clearSelectedClient);
+
+    // Auto-clear item comment & Capitalize
+    if (els.itemCommentInput) {
+        els.itemCommentInput.addEventListener('focus', () => {
+            els.itemCommentInput.value = '';
+        });
+
+        // Shortcuts on Enter or when focus leaves (so 'Go' button works too)
+        const checkAutocomplete = (e) => {
+            const val = e.target.value.trim().toUpperCase();
+            if (val === 'R') {
+                e.preventDefault && e.preventDefault();
+                e.target.value = 'Rotura';
+            } else if (val === 'D') {
+                e.preventDefault && e.preventDefault();
+                e.target.value = 'Devolución';
+            }
+        };
+
+        els.itemCommentInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                checkAutocomplete(e);
+            }
+        });
+
+        // Also check on blur/change for mobile keyboards that might trigger 'Go'
+        els.itemCommentInput.addEventListener('change', checkAutocomplete);
+
+        els.itemCommentInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            if (val.length > 0) {
+                // Only capitalize if first char is lowercase
+                if (val.charAt(0) !== val.charAt(0).toUpperCase()) {
+                    const start = e.target.selectionStart;
+                    const end = e.target.selectionEnd;
+                    e.target.value = val.charAt(0).toUpperCase() + val.slice(1);
+                    e.target.setSelectionRange(start, end);
+                }
+            }
+        });
+    }
+
+    // Items
+    if (els.addItemBtn) els.addItemBtn.addEventListener('click', addItem);
+
+    // Send
+    if (els.sendBtn) els.sendBtn.addEventListener('click', sendWhatsApp);
+
+    // 3. Initial Render
+    updatePhoneDisplay();
+
+    // Log init success
+    console.log('App Initialized. Clients loaded:', clients ? clients.length : 0);
+});
+
+// --- Functions ---
+
+function handleClientSearch(e) {
+    if (!els || !els.clientSuggestions) return; // Safety check
+
+    const query = e.target.value.toLowerCase();
+
+    if (query.length < 2) {
+        els.clientSuggestions.classList.add('hidden');
+        return;
+    }
+
+    // Filter clients (max 20 to avoid lag)
+    // Check if clients exists
+    if (!clients) {
+        console.error('Clients database not loaded');
+        return;
+    }
+
+    const matches = clients.filter(c =>
+        (c.name && c.name.toLowerCase().includes(query)) ||
+        (c.code && c.code.toLowerCase().includes(query))
+    ).slice(0, 20);
+
+    renderSuggestions(matches);
+}
+
+function renderSuggestions(matches) {
+    if (!els || !els.clientSuggestions) return;
+
+    els.clientSuggestions.innerHTML = '';
+
+    if (matches.length === 0) {
+        els.clientSuggestions.classList.add('hidden');
+        return;
+    }
+
+    matches.forEach(client => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.innerHTML = `<span class="suggestion-code">${client.code}</span> ${client.name}`;
+        div.onclick = () => selectClient(client);
+        els.clientSuggestions.appendChild(div);
+    });
+
+    els.clientSuggestions.classList.remove('hidden');
+}
+
+function selectClient(client) {
+    state.selectedClient = client;
+
+    // UI Updates
+    if (els.selectedClientName) els.selectedClientName.textContent = `${client.code} - ${client.name}`;
+    if (els.selectedClientDisplay) els.selectedClientDisplay.classList.remove('hidden');
+    if (els.clientSearchData) {
+        els.clientSearchData.classList.add('hidden');
+        els.clientSearchData.value = '';
+    }
+    if (els.clientSuggestions) els.clientSuggestions.classList.add('hidden');
+}
+
+function clearSelectedClient() {
+    state.selectedClient = null;
+    if (els.selectedClientDisplay) els.selectedClientDisplay.classList.add('hidden');
+    if (els.clientSearchData) {
+        els.clientSearchData.classList.remove('hidden');
+        els.clientSearchData.focus();
+    }
+}
+
+function addItem() {
+    if (!els) return;
+    const code = els.itemCodeInput.value.trim();
+    const qty = els.itemQtyInput.value.trim();
+    const comment = els.itemCommentInput.value.trim();
+
+    if (!code) {
+        alert('Por favor, ingresa un código de artículo.');
+        return;
+    }
+
+    state.items.push({ code, qty: qty || '1', comment });
+    renderItems();
+
+    // Reset inputs
+    els.itemCodeInput.value = '';
+    els.itemQtyInput.value = ''; // Reset to empty as requested
+    els.itemCommentInput.value = '';
+
+    // Focus back to Item Code
+    els.itemCodeInput.focus();
+}
+
+function removeFromList(index) {
+    state.items.splice(index, 1);
+    renderItems();
+}
+
+function editItem(index) {
+    const item = state.items[index];
+
+    // Populate inputs
+    if (els.itemCodeInput) els.itemCodeInput.value = item.code;
+    if (els.itemQtyInput) els.itemQtyInput.value = item.qty;
+    if (els.itemCommentInput) els.itemCommentInput.value = item.comment || '';
+
+    // Remove from list
+    removeFromList(index);
+
+    // Focus
+    if (els.itemCodeInput) els.itemCodeInput.focus();
+}
+
+function renderItems() {
+    if (!els.itemsList) return;
+    els.itemsList.innerHTML = '';
+    state.items.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'item-card';
+        div.onclick = (e) => {
+            // If clicking the delete button, don't trigger edit
+            if (e.target.closest('.delete-btn')) return;
+            editItem(index);
+        };
+
+        div.innerHTML = `
+            <div class="item-info">
+                <div>
+                    <span class="item-code">${item.code}</span> <span class="item-qty">x${item.qty}</span>
+                </div>
+                ${item.comment ? `<div class="item-comment-preview">${item.comment}</div>` : ''}
+            </div>
+            <button class="icon-btn delete-btn" onclick="document.dispatchEvent(new CustomEvent('removeItem', {detail: ${index}}))">
+                &times;
+            </button>
+        `;
+        els.itemsList.appendChild(div);
+    });
+}
+
+// Global listener for dynamic delete buttons
+document.addEventListener('removeItem', (e) => removeFromList(e.detail));
+
+function sendWhatsApp() {
+    if (!CONFIG.WHATSAPP_PHONE) {
+        alert('⚠️ Por favor, configura el número de teléfono en Ajustes (icono de engranaje) antes de enviar.');
+        openSettings();
+        return;
+    }
+
+    if (!state.selectedClient) {
+        alert('Por favor, selecciona un Cliente.');
+        return;
+    }
+    if (state.items.length === 0) {
+        alert('Por favor, añade al menos un artículo.');
+        return;
+    }
+
+    // Build Message
+    let message = `*ROTURAS${state.orderNumber ? ' Factura ' + state.orderNumber : ''}*\n\n`;
+    message += `*Cliente:* ${state.selectedClient.code} ${state.selectedClient.name}\n\n`;
+    message += `*Artículos:*\n\n`;
+
+    state.items.forEach(item => {
+        // Format: Código - Cant - Texto
+        message += `- *${item.code}* - ${item.qty}`;
+        if (item.comment) message += ` - ${item.comment}`;
+        message += `\n`;
+    });
+
+    const encodedMessage = encodeURIComponent(message);
+    const url = `https://wa.me/${CONFIG.WHATSAPP_PHONE}?text=${encodedMessage}`;
+
+    window.open(url, '_blank');
+}
+
+// --- Settings Functions ---
+function openSettings() {
+    if (!els) return;
+    els.phoneInput.value = CONFIG.WHATSAPP_PHONE;
+    els.settingsModal.classList.remove('hidden');
+}
+
+function closeSettings() {
+    if (els && els.settingsModal) els.settingsModal.classList.add('hidden');
+}
+
+function saveSettings() {
+    if (!els) return;
+    const phone = els.phoneInput.value.trim().replace(/\+/g, ''); // Remove + if present
+    if (!phone) {
+        alert('Por favor introduce un número de teléfono.');
+        return;
+    }
+    localStorage.setItem('roturas_target_phone', phone);
+    closeSettings();
+    updatePhoneDisplay();
+    alert('Configuración guardada.');
+}
+
+function updatePhoneDisplay() {
+    // Robust check for els existence
+    if (typeof els !== 'undefined' && els && els.currentPhoneDisplay) {
+        const phone = CONFIG.WHATSAPP_PHONE;
+        els.currentPhoneDisplay.textContent = phone ? phone : '(No configurado)';
+    }
+}
+
+</script>
+</body>
+
+</html>
