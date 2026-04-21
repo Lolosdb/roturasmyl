@@ -1,10 +1,9 @@
-import clients from './clients.js';
-
 // --- Configuration ---
 const CONFIG = {
-    // Default to empty, will load from localStorage
+    DEFAULT_PHONE: '34686227744', // Número por defecto
     get WHATSAPP_PHONE() {
-        return localStorage.getItem('roturas_target_phone') || '';
+        const saved = localStorage.getItem('roturas_target_phone');
+        return (saved && saved.trim() !== '') ? saved : this.DEFAULT_PHONE;
     }
 };
 
@@ -16,10 +15,8 @@ let state = {
     isSettingsOpen: false
 };
 
-// --- Global DOM Elements Reference ---
-// Define 'els' at the top level so it is accessible to all functions.
-// Using var to avoid Temporal Dead Zone issues in bundled script
-var els;
+// --- DOM Elements ---
+let els = {};
 
 // --- Initialization ---
 function initApp() {
@@ -36,9 +33,7 @@ function initApp() {
         itemCommentInput: document.getElementById('itemComment'),
         addItemBtn: document.getElementById('addItemBtn'),
         itemsList: document.getElementById('itemsList'),
-
         sendBtn: document.getElementById('sendBtn'),
-        // Settings elements
         settingsBtn: document.getElementById('settingsBtn'),
         settingsModal: document.getElementById('settingsModal'),
         closeSettingsBtn: document.getElementById('closeSettingsBtn'),
@@ -49,109 +44,130 @@ function initApp() {
     };
 
     // 2. Attach Event Listeners
-    if (els.orderInput) els.orderInput.addEventListener('input', (e) => state.orderNumber = e.target.value);
-
-    // Settings
-    if (els.settingsBtn) els.settingsBtn.addEventListener('click', openSettings);
-    if (els.closeSettingsBtn) els.closeSettingsBtn.addEventListener('click', closeSettings);
-    if (els.saveSettingsBtn) els.saveSettingsBtn.addEventListener('click', saveSettings);
-    if (els.changePhoneBtn) els.changePhoneBtn.addEventListener('click', openSettings);
-
-    // Client Search
-    if (els.clientSearchData) els.clientSearchData.addEventListener('input', handleClientSearch);
-    if (els.clearClientBtn) els.clearClientBtn.addEventListener('click', clearSelectedClient);
-
-    // Auto-clear item comment & Capitalize
-    if (els.itemCommentInput) {
-        els.itemCommentInput.addEventListener('focus', () => {
-            els.itemCommentInput.value = '';
-        });
-
-        // Shortcuts on Enter or when focus leaves (so 'Go' button works too)
-        const checkAutocomplete = (e) => {
-            const val = e.target.value.trim().toUpperCase();
-            if (val === 'R') {
-                e.preventDefault && e.preventDefault();
-                e.target.value = 'Rotura';
-            } else if (val === 'D') {
-                e.preventDefault && e.preventDefault();
-                e.target.value = 'Devolución';
-            }
-        };
-
-        els.itemCommentInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.keyCode === 13) {
-                checkAutocomplete(e);
-            }
-        });
-
-        // Also check on blur/change for mobile keyboards that might trigger 'Go'
-        els.itemCommentInput.addEventListener('change', checkAutocomplete);
-
-        els.itemCommentInput.addEventListener('input', (e) => {
-            const val = e.target.value;
-            if (val.length > 0) {
-                // Only capitalize if first char is lowercase
-                if (val.charAt(0) !== val.charAt(0).toUpperCase()) {
-                    const start = e.target.selectionStart;
-                    const end = e.target.selectionEnd;
-                    e.target.value = val.charAt(0).toUpperCase() + val.slice(1);
-                    e.target.setSelectionRange(start, end);
-                }
-            }
-        });
-    }
-
-    // Items
-    if (els.addItemBtn) els.addItemBtn.addEventListener('click', addItem);
-
-    // Send
-    if (els.sendBtn) els.sendBtn.addEventListener('click', sendWhatsApp);
+    setupEventListeners();
 
     // 3. Initial Render
     updatePhoneDisplay();
-
-    // Log init success
-    console.log('App Initialized. Clients loaded:', clients ? clients.length : 0);
+    
+    console.log('Luxe App Initialized. Clients:', clients?.length);
 }
 
-// Check state to ensure init
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initApp);
-} else {
-    initApp();
+function setupEventListeners() {
+    // Order info
+    els.orderInput?.addEventListener('input', (e) => state.orderNumber = e.target.value);
+
+    // Settings
+    els.settingsBtn?.addEventListener('click', openSettings);
+    els.closeSettingsBtn?.addEventListener('click', closeSettings);
+    els.saveSettingsBtn?.addEventListener('click', saveSettings);
+    els.changePhoneBtn?.addEventListener('click', openSettings);
+
+    // Client Search
+    els.clientSearchData?.addEventListener('input', handleClientSearch);
+    els.clearClientBtn?.addEventListener('click', clearSelectedClient);
+
+    // Item Comment logic (Shortcuts & Capitalization)
+    setupCommentLogic();
+
+    // Items management
+    els.addItemBtn?.addEventListener('click', addItem);
+    
+    // Manejo de Enter para saltar entre campos
+    els.orderInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            els.clientSearchData.focus();
+        }
+    });
+
+    els.itemCodeInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            els.itemQtyInput.focus();
+        }
+    });
+
+    els.itemQtyInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            els.itemCommentInput.focus();
+        }
+    });
+
+    els.itemCommentInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            // En el último campo, primero aplicamos shortcuts y luego añadimos
+            const val = e.target.value.trim().toUpperCase();
+            if (val === 'R') e.target.value = 'Rotura';
+            else if (val === 'D') e.target.value = 'Devolución';
+            
+            addItem();
+        }
+    });
+
+
+    // Send WhatsApp
+    els.sendBtn?.addEventListener('click', sendWhatsApp);
+
+    // Global delete listener
+    document.addEventListener('removeItem', (e) => removeFromList(e.detail));
 }
 
-// --- Functions ---
+function setupCommentLogic() {
+    if (!els.itemCommentInput) return;
+
+    // Auto-clear on focus
+    els.itemCommentInput.addEventListener('focus', () => {
+        els.itemCommentInput.value = '';
+    });
+
+    const checkShortcuts = (e) => {
+        const val = e.target.value.trim().toUpperCase();
+        if (val === 'R') {
+            e.target.value = 'Rotura';
+        } else if (val === 'D') {
+            e.target.value = 'Devolución';
+        }
+    };
+
+    els.itemCommentInput.addEventListener('blur', checkShortcuts);
+
+    // Capitalize first letter
+    els.itemCommentInput.addEventListener('input', (e) => {
+        let val = e.target.value;
+        if (val.length > 0) {
+            if (val[0] !== val[0].toUpperCase()) {
+                const start = e.target.selectionStart;
+                const end = e.target.selectionEnd;
+                e.target.value = val[0].toUpperCase() + val.slice(1);
+                e.target.setSelectionRange(start, end);
+            }
+        }
+    });
+}
+
+// --- Logic Functions ---
 
 function handleClientSearch(e) {
-    if (!els || !els.clientSuggestions) return; // Safety check
-
     const query = e.target.value.toLowerCase();
 
     if (query.length < 2) {
-        els.clientSuggestions.classList.add('hidden');
+        els.clientSuggestions?.classList.add('hidden');
         return;
     }
 
-    // Filter clients (max 20 to avoid lag)
-    // Check if clients exists
-    if (!clients) {
-        console.error('Clients database not loaded');
-        return;
-    }
+    if (!clients) return;
 
     const matches = clients.filter(c =>
-        (c.name && c.name.toLowerCase().includes(query)) ||
-        (c.code && c.code.toLowerCase().includes(query))
+        (c.name?.toLowerCase().includes(query)) ||
+        (c.code?.toLowerCase().includes(query))
     ).slice(0, 20);
 
     renderSuggestions(matches);
 }
 
 function renderSuggestions(matches) {
-    if (!els || !els.clientSuggestions) return;
-
+    if (!els.clientSuggestions) return;
     els.clientSuggestions.innerHTML = '';
 
     if (matches.length === 0) {
@@ -172,46 +188,37 @@ function renderSuggestions(matches) {
 
 function selectClient(client) {
     state.selectedClient = client;
-
-    // UI Updates
-    if (els.selectedClientName) els.selectedClientName.textContent = `${client.code} - ${client.name}`;
-    if (els.selectedClientDisplay) els.selectedClientDisplay.classList.remove('hidden');
-    if (els.clientSearchData) {
-        els.clientSearchData.classList.add('hidden');
-        els.clientSearchData.value = '';
-    }
-    if (els.clientSuggestions) els.clientSuggestions.classList.add('hidden');
+    els.selectedClientName.textContent = `${client.code} - ${client.name}`;
+    els.selectedClientDisplay.classList.remove('hidden');
+    els.clientSearchData.classList.add('hidden');
+    els.clientSuggestions.classList.add('hidden');
 }
 
 function clearSelectedClient() {
     state.selectedClient = null;
-    if (els.selectedClientDisplay) els.selectedClientDisplay.classList.add('hidden');
-    if (els.clientSearchData) {
-        els.clientSearchData.classList.remove('hidden');
-        els.clientSearchData.focus();
-    }
+    els.selectedClientDisplay.classList.add('hidden');
+    els.clientSearchData.classList.remove('hidden');
+    els.clientSearchData.value = '';
+    els.clientSearchData.focus();
 }
 
 function addItem() {
-    if (!els) return;
     const code = els.itemCodeInput.value.trim();
-    const qty = els.itemQtyInput.value.trim();
+    const qty = els.itemQtyInput.value.trim() || '1';
     const comment = els.itemCommentInput.value.trim();
 
     if (!code) {
-        alert('Por favor, ingresa un código de artículo.');
+        els.itemCodeInput.focus();
         return;
     }
 
-    state.items.push({ code, qty: qty || '1', comment });
+    state.items.unshift({ code, qty, comment }); // New items on top
     renderItems();
 
-    // Reset inputs
+    // Reset and focus
     els.itemCodeInput.value = '';
-    els.itemQtyInput.value = ''; // Reset to empty as requested
+    els.itemQtyInput.value = '';
     els.itemCommentInput.value = '';
-
-    // Focus back to Item Code
     els.itemCodeInput.focus();
 }
 
@@ -222,111 +229,122 @@ function removeFromList(index) {
 
 function editItem(index) {
     const item = state.items[index];
-
-    // Populate inputs
-    if (els.itemCodeInput) els.itemCodeInput.value = item.code;
-    if (els.itemQtyInput) els.itemQtyInput.value = item.qty;
-    if (els.itemCommentInput) els.itemCommentInput.value = item.comment || '';
-
-    // Remove from list
+    els.itemCodeInput.value = item.code;
+    els.itemQtyInput.value = item.qty;
+    els.itemCommentInput.value = item.comment;
+    
     removeFromList(index);
-
-    // Focus
-    if (els.itemCodeInput) els.itemCodeInput.focus();
+    els.itemCodeInput.focus();
 }
 
 function renderItems() {
     if (!els.itemsList) return;
     els.itemsList.innerHTML = '';
+
     state.items.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'item-card';
+        div.style.animation = 'fadeIn 0.3s ease-out';
+        
         div.onclick = (e) => {
-            // If clicking the delete button, don't trigger edit
             if (e.target.closest('.delete-btn')) return;
             editItem(index);
         };
 
         div.innerHTML = `
             <div class="item-info">
-                <div>
-                    <span class="item-code">${item.code}</span> <span class="item-qty">x${item.qty}</span>
+                <div class="item-main">
+                    <span class="item-code">${item.code}</span>
+                    <span class="item-qty">x${item.qty}</span>
                 </div>
                 ${item.comment ? `<div class="item-comment-preview">${item.comment}</div>` : ''}
             </div>
-            <button class="icon-btn delete-btn" onclick="document.dispatchEvent(new CustomEvent('removeItem', {detail: ${index}}))">
-                &times;
+            <button class="delete-btn" onclick="document.dispatchEvent(new CustomEvent('removeItem', {detail: ${index}}))">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
         `;
         els.itemsList.appendChild(div);
     });
 }
 
-// Global listener for dynamic delete buttons
-document.addEventListener('removeItem', (e) => removeFromList(e.detail));
-
 function sendWhatsApp() {
-    if (!CONFIG.WHATSAPP_PHONE) {
-        alert('⚠️ Por favor, configura el número de teléfono en Ajustes (icono de engranaje) antes de enviar.');
+    const phone = CONFIG.WHATSAPP_PHONE;
+    if (!phone) {
+        alert('⚠️ Por favor, configura el teléfono de destino en ajustes.');
         openSettings();
         return;
     }
 
     if (!state.selectedClient) {
-        alert('Por favor, selecciona un Cliente.');
-        return;
-    }
-    if (state.items.length === 0) {
-        alert('Por favor, añade al menos un artículo.');
+        alert('Por favor, selecciona un cliente.');
+        els.clientSearchData.focus();
         return;
     }
 
-    // Build Message
+    if (state.items.length === 0) {
+        alert('Añade al menos un artículo.');
+        els.itemCodeInput.focus();
+        return;
+    }
+
     let message = `*ROTURAS${state.orderNumber ? ' Factura ' + state.orderNumber : ''}*\n\n`;
-    message += `*Cliente:* ${state.selectedClient.code} ${state.selectedClient.name}\n\n`;
-    message += `*Artículos:*\n\n`;
+    
+    // Truco: añadir un carácter invisible (\u200B) tras el primer dígito para evitar resaltado en WhatsApp
+    const clientCode = String(state.selectedClient.code);
+    const clientCodeFixed = clientCode[0] + '\u200B' + clientCode.slice(1);
+    
+    message += `*Cliente:* ${clientCodeFixed} ${state.selectedClient.name}\n\n`;
+    message += `*Artículos:*\n`;
 
     state.items.forEach(item => {
-        // Format: Código - Cant - Texto
-        message += `- *${item.code}* - ${item.qty}`;
+        const itemCode = String(item.code);
+        const itemCodeFixed = itemCode[0] + '\u200B' + itemCode.slice(1);
+        
+        message += `- *${itemCodeFixed}* - ${item.qty}`;
         if (item.comment) message += ` - ${item.comment}`;
         message += `\n`;
     });
 
-    const encodedMessage = encodeURIComponent(message);
-    const url = `https://wa.me/${CONFIG.WHATSAPP_PHONE}?text=${encodedMessage}`;
-
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
 }
 
-// --- Settings Functions ---
+// --- Settings ---
 function openSettings() {
-    if (!els) return;
     els.phoneInput.value = CONFIG.WHATSAPP_PHONE;
     els.settingsModal.classList.remove('hidden');
+    els.phoneInput.focus();
 }
 
 function closeSettings() {
-    if (els && els.settingsModal) els.settingsModal.classList.add('hidden');
+    els.settingsModal.classList.add('hidden');
 }
 
 function saveSettings() {
-    if (!els) return;
-    const phone = els.phoneInput.value.trim().replace(/\+/g, ''); // Remove + if present
+    const phone = els.phoneInput.value.trim().replace(/\+/g, '');
     if (!phone) {
-        alert('Por favor introduce un número de teléfono.');
+        alert('Introduce un número válido.');
         return;
     }
     localStorage.setItem('roturas_target_phone', phone);
     closeSettings();
     updatePhoneDisplay();
-    alert('Configuración guardada.');
 }
 
 function updatePhoneDisplay() {
-    // Robust check for els existence
-    if (typeof els !== 'undefined' && els && els.currentPhoneDisplay) {
+    if (els.currentPhoneDisplay) {
         const phone = CONFIG.WHATSAPP_PHONE;
-        els.currentPhoneDisplay.textContent = phone ? phone : '(No configurado)';
+        els.currentPhoneDisplay.textContent = phone || '(No configurado)';
     }
 }
+
+// Boot
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+
+
+
+
