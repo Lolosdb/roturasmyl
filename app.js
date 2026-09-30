@@ -4,6 +4,9 @@ const CONFIG = {
     get WHATSAPP_PHONE() {
         const saved = localStorage.getItem('roturas_target_phone');
         return (saved && saved.trim() !== '') ? saved : this.DEFAULT_PHONE;
+    },
+    get WA_APP() {
+        return localStorage.getItem('roturas_wa_app') || 'personal';
     }
 };
 
@@ -40,7 +43,8 @@ function initApp() {
         saveSettingsBtn: document.getElementById('saveSettingsBtn'),
         phoneInput: document.getElementById('phoneInput'),
         currentPhoneDisplay: document.getElementById('currentPhoneDisplay'),
-        changePhoneBtn: document.getElementById('changePhoneBtn')
+        changePhoneBtn: document.getElementById('changePhoneBtn'),
+        waAppSelect: document.getElementById('waAppSelect')
     };
 
     // 2. Attach Event Listeners
@@ -305,13 +309,31 @@ function sendWhatsApp() {
         message += `\n`;
     });
 
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    let url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    
+    // Si se seleccionó WhatsApp Business, intentamos usar el formato de intent (Android) o el link oficial.
+    // En Android, esto fuerza abrir la aplicación de Business.
+    if (CONFIG.WA_APP === 'business') {
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        if (isAndroid) {
+            url = `intent://send/?phone=${phone}&text=${encodeURIComponent(message)}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end;`;
+        } else {
+            // Fallback para iOS / Escritorio
+            url = `whatsapp-smb://send?phone=${phone}&text=${encodeURIComponent(message)}`;
+            // Si el protocolo falla silenciosamente en algunos navegadores, el usuario puede 
+            // no notar nada, pero en iOS debería sugerir abrir WhatsApp Business.
+        }
+    }
+
     window.open(url, '_blank');
 }
 
 // --- Settings ---
 function openSettings() {
     els.phoneInput.value = CONFIG.WHATSAPP_PHONE;
+    if (els.waAppSelect) {
+        els.waAppSelect.value = CONFIG.WA_APP;
+    }
     els.settingsModal.classList.remove('hidden');
     els.phoneInput.focus();
 }
@@ -327,6 +349,11 @@ function saveSettings() {
         return;
     }
     localStorage.setItem('roturas_target_phone', phone);
+    
+    if (els.waAppSelect) {
+        localStorage.setItem('roturas_wa_app', els.waAppSelect.value);
+    }
+    
     closeSettings();
     updatePhoneDisplay();
 }
