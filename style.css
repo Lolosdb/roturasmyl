@@ -560,6 +560,209 @@ input::placeholder {
     line-height: 1.5;
 }
 
+/* Toolbar Row */
+.toolbar-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.toolbar-btn:hover {
+    color: var(--text-main);
+    border-color: var(--glass-border-hover);
+    background: var(--surface-hover);
+}
+
+.toolbar-btn:active {
+    transform: scale(0.97);
+}
+
+/* Quick Comment Chips */
+.comment-chips {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.chip-btn {
+    min-height: 44px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--btn-secondary-bg);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.chip-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-glow);
+}
+
+.chip-btn:active {
+    transform: scale(0.95);
+}
+
+/* Duplicate Reference Warning & Highlight */
+.duplicate-warning {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    line-height: 1.4;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    color: #f59e0b;
+    font-weight: 500;
+}
+
+.item-card--duplicate {
+    border-color: rgba(245, 158, 11, 0.65) !important;
+    background: rgba(245, 158, 11, 0.08) !important;
+}
+
+.duplicate-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+}
+
+/* History Modal */
+.modal-content--wide {
+    max-width: 460px;
+}
+
+.modal-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.text-danger-btn {
+    background: transparent;
+    border: none;
+    color: var(--danger);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.history-empty {
+    text-align: center;
+    padding: 24px 12px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+.history-card {
+    background: var(--surface-subtle);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.history-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.history-client {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text-main);
+}
+
+.history-meta {
+    font-size: 0.76rem;
+    color: var(--text-dim);
+}
+
+.history-summary {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: pre-line;
+}
+
+.history-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.history-action-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--glass-border);
+    background: var(--btn-secondary-bg);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.history-action-btn:hover {
+    background: var(--btn-secondary-hover);
+}
+
+.history-action-btn--primary {
+    background: var(--primary-glow);
+    border-color: rgba(34, 197, 94, 0.4);
+    color: var(--primary);
+}
+
 @keyframes slideUp {
     from { transform: translateY(100%); }
     to { transform: translateY(0); }

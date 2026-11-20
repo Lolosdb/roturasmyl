@@ -85,7 +85,34 @@
       </div>
     </div>
 
+    <!-- History Modal -->
+    <div id="historyModal" class="modal hidden">
+      <div class="modal-content modal-content--wide">
+        <div class="modal-header-row">
+          <h2 style="margin-bottom: 0;">Historial de Partes</h2>
+          <button id="clearHistoryBtn" class="text-danger-btn" type="button">Vaciar</button>
+        </div>
+        <div id="historyList" class="history-list">
+          <!-- History items dynamically added -->
+        </div>
+        <div class="action-area" style="margin-top: 20px;">
+          <button id="closeHistoryBtn" class="btn secondary" type="button">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
     <main>
+      <div class="toolbar-row">
+        <button id="openHistoryBtn" class="toolbar-btn" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Historial (<span id="historyCount">0</span>)</span>
+        </button>
+        <button id="clearDraftBtn" class="toolbar-btn" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          <span>Nuevo parte</span>
+        </button>
+      </div>
+
       <!-- Order Section -->
       <section class="card">
         <div class="form-group">
@@ -126,6 +153,12 @@
         <div class="form-group">
           <label for="itemComment">Observaciones</label>
           <input type="text" id="itemComment" placeholder="Añadir comentario...">
+          <div class="comment-chips" aria-label="Observaciones rápidas">
+            <button type="button" class="chip-btn" data-comment="Rotura">Rotura</button>
+            <button type="button" class="chip-btn" data-comment="Devolución">Devolución</button>
+            <button type="button" class="chip-btn" data-comment="Falta en pedido">Falta en pedido</button>
+            <button type="button" class="chip-btn" data-comment="Defectuoso">Defectuoso</button>
+          </div>
         </div>
 
         <button id="addItemBtn" class="btn secondary">
@@ -133,18 +166,26 @@
           Añadir a la lista
         </button>
 
+        <div id="duplicateWarning" class="duplicate-warning hidden" role="alert">
+          Hay referencias repetidas marcadas en amarillo. Revisa o borra la línea repetida si es un error.
+        </div>
+
         <div id="itemsList" class="items-list">
           <!-- Items dynamically added -->
         </div>
       </section>
 
       <!-- Action Section -->
-      <div class="action-area" style="margin-top: 40px;">
+      <div class="action-area" style="margin-top: 32px;">
         <button id="sendBtn" class="btn primary">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.029.575 1.943.84 3.071.841 3.18 0 5.767-2.587 5.767-5.766.001-3.182-2.585-5.769-5.766-5.769zm9.318 9.319c1.697-3.181 1.084-7.202-1.747-9.721-2.903-2.585-7.377-2.576-10.264.02-2.738 2.463-3.415 6.471-1.746 9.682l-2.091 7.636 7.822-2.051c1.293.425 2.593.593 3.846.593 3.197 0 6.182-1.282 8.356-3.486 1.487-1.508 2.306-3.488 2.306-5.619 0-1.896-.645-3.692-1.803-5.263l-.679 8.216z" />
+          <svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor" aria-hidden="true">
+            <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
           </svg>
           Enviar Reporte por WhatsApp
+        </button>
+        <button id="copyReportBtn" class="btn secondary" type="button" style="margin-top: 12px;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          Copiar texto del reporte
         </button>
         <div style="text-align: center; margin-top: 16px; font-size: 0.8rem; color: var(--text-dim);">
           Enviando a: <span id="currentPhoneDisplay" style="color: var(--text-muted); font-weight: 500;">...</span>

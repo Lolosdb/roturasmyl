@@ -6,8 +6,12 @@ const STORAGE_KEYS = {
     DRIVE_API_URL: 'roturas_drive_api_url',
     DRIVE_TOKEN: 'roturas_drive_token',
     CLIENTS_DB: 'roturas_clients_db',
-    CLIENTS_SYNC_META: 'roturas_clients_sync_meta'
+    CLIENTS_SYNC_META: 'roturas_clients_sync_meta',
+    DRAFT: 'roturas_draft',
+    HISTORY: 'roturas_history'
 };
+
+const MAX_HISTORY_ITEMS = 30;
 
 const CONFIG = {
     DEFAULT_PHONE: '34686227744', // Número por defecto
@@ -81,7 +85,16 @@ function initApp() {
         itemCommentInput: document.getElementById('itemComment'),
         addItemBtn: document.getElementById('addItemBtn'),
         itemsList: document.getElementById('itemsList'),
+        duplicateWarning: document.getElementById('duplicateWarning'),
         sendBtn: document.getElementById('sendBtn'),
+        copyReportBtn: document.getElementById('copyReportBtn'),
+        openHistoryBtn: document.getElementById('openHistoryBtn'),
+        historyCount: document.getElementById('historyCount'),
+        clearDraftBtn: document.getElementById('clearDraftBtn'),
+        historyModal: document.getElementById('historyModal'),
+        historyList: document.getElementById('historyList'),
+        closeHistoryBtn: document.getElementById('closeHistoryBtn'),
+        clearHistoryBtn: document.getElementById('clearHistoryBtn'),
         syncClientsBtn: document.getElementById('syncClientsBtn'),
         syncStatusBanner: document.getElementById('syncStatusBanner'),
         settingsBtn: document.getElementById('settingsBtn'),
@@ -105,16 +118,27 @@ function initApp() {
     // 3. Attach Event Listeners
     setupEventListeners();
 
-    // 4. Initial Render
+    // 4. Restore Draft & Initial Render
+    loadDraft();
     updatePhoneDisplay();
     updateClientsDbInfo();
+    updateHistoryCount();
 
     console.log('Luxe App Initialized. Clients:', clientsDB.length);
 }
 
 function setupEventListeners() {
     // Order info
-    els.orderInput?.addEventListener('input', (e) => state.orderNumber = e.target.value);
+    els.orderInput?.addEventListener('input', (e) => {
+        state.orderNumber = e.target.value;
+        saveDraft();
+    });
+
+    // Toolbar (History & New Draft)
+    els.openHistoryBtn?.addEventListener('click', openHistoryModal);
+    els.closeHistoryBtn?.addEventListener('click', closeHistoryModal);
+    els.clearHistoryBtn?.addEventListener('click', clearAllHistory);
+    els.clearDraftBtn?.addEventListener('click', () => clearDraft(false));
 
     // Settings & Sync
     els.syncClientsBtn?.addEventListener('click', syncClientsFromDrive);
@@ -124,11 +148,17 @@ function setupEventListeners() {
     els.changePhoneBtn?.addEventListener('click', openSettings);
     els.themeSelect?.addEventListener('change', (e) => applyTheme(e.target.value));
 
-    // Client Search
+    // Client Search & outside-click close
     els.clientSearchData?.addEventListener('input', handleClientSearch);
-    els.clearClientBtn?.addEventListener('click', clearSelectedClient);
+    els.clearClientBtn?.addEventListener('click', () => clearSelectedClient(false));
+    document.addEventListener('click', (e) => {
+        if (!els.clientSuggestions || els.clientSuggestions.classList.contains('hidden')) return;
+        if (e.target !== els.clientSearchData && !els.clientSuggestions.contains(e.target)) {
+            els.clientSuggestions.classList.add('hidden');
+        }
+    });
 
-    // Item Comment logic (Shortcuts & Capitalization)
+    // Item Comment logic (Shortcuts, Chips & Capitalization)
     setupCommentLogic();
 
     // Items management
@@ -168,8 +198,9 @@ function setupEventListeners() {
     });
 
 
-    // Send WhatsApp
+    // Send WhatsApp & Copy
     els.sendBtn?.addEventListener('click', sendWhatsApp);
+    els.copyReportBtn?.addEventListener('click', copyReportToClipboard);
 
     // Global delete listener
     document.addEventListener('removeItem', (e) => removeFromList(e.detail));
@@ -177,11 +208,6 @@ function setupEventListeners() {
 
 function setupCommentLogic() {
     if (!els.itemCommentInput) return;
-
-    // Auto-clear on focus
-    els.itemCommentInput.addEventListener('focus', () => {
-        els.itemCommentInput.value = '';
-    });
 
     const checkShortcuts = (e) => {
         const val = e.target.value.trim().toUpperCase();
@@ -206,12 +232,27 @@ function setupCommentLogic() {
             }
         }
     });
+
+    // Quick comment chips
+    document.querySelectorAll('.chip-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            els.itemCommentInput.value = btn.dataset.comment || btn.textContent.trim();
+            els.itemCommentInput.focus();
+        });
+    });
 }
 
 // --- Logic Functions ---
 
+function normalizeSearchText(text) {
+    return String(text ?? '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
 function handleClientSearch(e) {
-    const query = e.target.value.toLowerCase();
+    const query = normalizeSearchText(e.target.value).trim();
 
     if (query.length < 2) {
         els.clientSuggestions?.classList.add('hidden');
@@ -221,8 +262,8 @@ function handleClientSearch(e) {
     if (!clientsDB || clientsDB.length === 0) return;
 
     const matches = clientsDB.filter(c =>
-        (c.name?.toLowerCase().includes(query)) ||
-        (c.code?.toLowerCase().includes(query))
+        normalizeSearchText(c.name).includes(query) ||
+        normalizeSearchText(c.code).includes(query)
     ).slice(0, 20);
 
     renderSuggestions(matches);
@@ -254,25 +295,46 @@ function renderSuggestions(matches) {
     els.clientSuggestions.classList.remove('hidden');
 }
 
-function selectClient(client) {
+function selectClient(client, skipFocus = false) {
     state.selectedClient = client;
     els.selectedClientName.textContent = `${client.code} - ${client.name}`;
     els.selectedClientDisplay.classList.remove('hidden');
     els.clientSearchData.classList.add('hidden');
     els.clientSuggestions.classList.add('hidden');
+    if (!skipFocus) {
+        saveDraft();
+    }
 }
 
-function clearSelectedClient() {
+function clearSelectedClient(skipFocus = false) {
     state.selectedClient = null;
     els.selectedClientDisplay.classList.add('hidden');
     els.clientSearchData.classList.remove('hidden');
     els.clientSearchData.value = '';
-    els.clientSearchData.focus();
+    if (!skipFocus) {
+        saveDraft();
+        els.clientSearchData.focus();
+    }
+}
+
+function getDuplicateCodesSet(items) {
+    const counts = new Map();
+    (items || []).forEach(item => {
+        const key = String(item.code || '').trim().toUpperCase();
+        if (!key) return;
+        counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    const duplicates = new Set();
+    counts.forEach((count, key) => {
+        if (count > 1) duplicates.add(key);
+    });
+    return duplicates;
 }
 
 function addItem() {
     const code = els.itemCodeInput.value.trim();
-    const qty = els.itemQtyInput.value.trim() || '1';
+    const rawQty = els.itemQtyInput.value.trim();
+    const qty = rawQty || '1';
     const comment = els.itemCommentInput.value.trim();
 
     if (!code) {
@@ -280,8 +342,32 @@ function addItem() {
         return;
     }
 
+    const numericQty = Number(qty);
+    if (!Number.isFinite(numericQty) || numericQty < 1) {
+        alert('Introduce una cantidad válida (mínimo 1).');
+        els.itemQtyInput.focus();
+        return;
+    }
+
+    const normalizedCode = code.toUpperCase();
+    const existingItem = state.items.find(
+        item => String(item.code || '').trim().toUpperCase() === normalizedCode
+    );
+
+    if (existingItem) {
+        const proceed = confirm(
+            `⚠️ La referencia ${code} ya está en la lista (x${existingItem.qty}${existingItem.comment ? ' - ' + existingItem.comment : ''}).\n\n` +
+            `¿Quieres añadirla igualmente como otra línea aparte? (Pulsa Cancelar si fue un error)`
+        );
+        if (!proceed) {
+            els.itemsList?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return;
+        }
+    }
+
     state.items.unshift({ code, qty, comment }); // New items on top
     renderItems();
+    saveDraft();
 
     // Reset and focus
     els.itemCodeInput.value = '';
@@ -293,6 +379,7 @@ function addItem() {
 function removeFromList(index) {
     state.items.splice(index, 1);
     renderItems();
+    saveDraft();
 }
 
 function editItem(index) {
@@ -309,70 +396,130 @@ function renderItems() {
     if (!els.itemsList) return;
     els.itemsList.innerHTML = '';
 
+    const duplicateCodes = getDuplicateCodesSet(state.items);
+    if (els.duplicateWarning) {
+        els.duplicateWarning.classList.toggle('hidden', duplicateCodes.size === 0);
+    }
+
     state.items.forEach((item, index) => {
+        const isDuplicate = duplicateCodes.has(String(item.code || '').trim().toUpperCase());
         const div = document.createElement('div');
-        div.className = 'item-card';
+        div.className = isDuplicate ? 'item-card item-card--duplicate' : 'item-card';
         div.style.animation = 'fadeIn 0.3s ease-out';
-        
+
         div.onclick = (e) => {
             if (e.target.closest('.delete-btn')) return;
             editItem(index);
         };
 
-        div.innerHTML = `
-            <div class="item-info">
-                <div class="item-main">
-                    <span class="item-code">${item.code}</span>
-                    <span class="item-qty">x${item.qty}</span>
-                </div>
-                ${item.comment ? `<div class="item-comment-preview">${item.comment}</div>` : ''}
-            </div>
-            <button class="delete-btn" onclick="document.dispatchEvent(new CustomEvent('removeItem', {detail: ${index}}))">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-        `;
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'item-info';
+
+        const mainDiv = document.createElement('div');
+        mainDiv.className = 'item-main';
+
+        const codeSpan = document.createElement('span');
+        codeSpan.className = 'item-code';
+        codeSpan.textContent = item.code;
+
+        const qtySpan = document.createElement('span');
+        qtySpan.className = 'item-qty';
+        qtySpan.textContent = `x${item.qty}`;
+
+        mainDiv.appendChild(codeSpan);
+        mainDiv.appendChild(qtySpan);
+
+        if (isDuplicate) {
+            const badge = document.createElement('span');
+            badge.className = 'duplicate-badge';
+            badge.textContent = 'Repetida';
+            mainDiv.appendChild(badge);
+        }
+
+        infoDiv.appendChild(mainDiv);
+
+        if (item.comment) {
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'item-comment-preview';
+            commentDiv.textContent = item.comment;
+            infoDiv.appendChild(commentDiv);
+        }
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.type = 'button';
+        deleteBtn.setAttribute('aria-label', 'Eliminar línea');
+        deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        deleteBtn.onclick = () => document.dispatchEvent(new CustomEvent('removeItem', { detail: index }));
+
+        div.appendChild(infoDiv);
+        div.appendChild(deleteBtn);
         els.itemsList.appendChild(div);
     });
 }
 
-function sendWhatsApp() {
-    const phone = String(CONFIG.WHATSAPP_PHONE || '').replace(/\D/g, '');
-    if (!phone) {
-        alert('⚠️ Por favor, configura el teléfono de destino en ajustes.');
-        openSettings();
-        return;
-    }
+function buildReportMessage(orderNumber, selectedClient, items) {
+    let message = `*ROTURAS${orderNumber ? ' Factura ' + orderNumber : ''}*\n\n`;
 
-    if (!state.selectedClient) {
-        alert('Por favor, selecciona un cliente.');
-        els.clientSearchData.focus();
-        return;
-    }
-
-    if (state.items.length === 0) {
-        alert('Añade al menos un artículo.');
-        els.itemCodeInput.focus();
-        return;
-    }
-
-    let message = `*ROTURAS${state.orderNumber ? ' Factura ' + state.orderNumber : ''}*\n\n`;
-    
     // Truco: añadir un carácter invisible (\u200B) tras el primer dígito para evitar resaltado en WhatsApp
-    const clientCode = String(state.selectedClient.code);
+    const clientCode = String(selectedClient.code);
     const clientCodeFixed = clientCode[0] + '\u200B' + clientCode.slice(1);
-    
-    message += `*Cliente:* ${clientCodeFixed} ${state.selectedClient.name}\n\n`;
+
+    message += `*Cliente:* ${clientCodeFixed} ${selectedClient.name}\n\n`;
     message += `*Artículos:*\n`;
 
-    state.items.forEach(item => {
+    items.forEach(item => {
         const itemCode = String(item.code);
         const itemCodeFixed = itemCode[0] + '\u200B' + itemCode.slice(1);
-        
+
         message += `- *${itemCodeFixed}* - ${item.qty}`;
         if (item.comment) message += ` - ${item.comment}`;
         message += `\n`;
     });
 
+    return message;
+}
+
+function validateReportBeforeExport() {
+    const phone = String(CONFIG.WHATSAPP_PHONE || '').replace(/\D/g, '');
+    if (!phone) {
+        alert('⚠️ Por favor, configura el teléfono de destino en ajustes.');
+        openSettings();
+        return null;
+    }
+
+    if (!state.selectedClient) {
+        alert('Por favor, selecciona un cliente.');
+        els.clientSearchData.focus();
+        return null;
+    }
+
+    if (state.items.length === 0) {
+        alert('Añade al menos un artículo.');
+        els.itemCodeInput.focus();
+        return null;
+    }
+
+    const duplicateCodes = getDuplicateCodesSet(state.items);
+    if (duplicateCodes.size > 0) {
+        const listStr = Array.from(duplicateCodes).join(', ');
+        const proceed = confirm(
+            `⚠️ Tienes referencias repetidas en el parte (${listStr}).\n\n` +
+            `¿Quieres enviarlo así igualmente? Pulsa Cancelar para revisar y borrar la línea repetida.`
+        );
+        if (!proceed) {
+            els.itemsList?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return null;
+        }
+    }
+
+    return {
+        phone,
+        message: buildReportMessage(state.orderNumber.trim(), state.selectedClient, state.items)
+    };
+}
+
+function openWhatsAppBusiness(phone, message) {
     const encodedText = encodeURIComponent(message);
     const ua = navigator.userAgent || '';
     const isAndroid = /Android/i.test(ua) || (/Linux/i.test(ua) && navigator.maxTouchPoints > 0);
@@ -393,6 +540,264 @@ function sendWhatsApp() {
 
     // Escritorio: abrir WhatsApp Web / Desktop
     window.open(`https://wa.me/${phone}?text=${encodedText}`, '_blank');
+}
+
+function sendWhatsApp() {
+    const validated = validateReportBeforeExport();
+    if (!validated) return;
+
+    saveReportToHistory({
+        orderNumber: state.orderNumber.trim(),
+        client: { code: state.selectedClient.code, name: state.selectedClient.name },
+        items: state.items.map(item => ({ ...item }))
+    });
+
+    openWhatsAppBusiness(validated.phone, validated.message);
+}
+
+async function copyReportToClipboard() {
+    if (!state.selectedClient) {
+        alert('Por favor, selecciona un cliente.');
+        els.clientSearchData.focus();
+        return;
+    }
+    if (state.items.length === 0) {
+        alert('Añade al menos un artículo.');
+        els.itemCodeInput.focus();
+        return;
+    }
+
+    const message = buildReportMessage(state.orderNumber.trim(), state.selectedClient, state.items);
+
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(message);
+        } else {
+            const tempArea = document.createElement('textarea');
+            tempArea.value = message;
+            tempArea.style.position = 'fixed';
+            tempArea.style.opacity = '0';
+            document.body.appendChild(tempArea);
+            tempArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempArea);
+        }
+        showSyncStatus('Texto del reporte copiado al portapapeles.', 'success', 4000);
+    } catch (err) {
+        console.error('Error al copiar:', err);
+        alert('No se pudo copiar automáticamente al portapapeles.');
+    }
+}
+
+// --- Draft Persistence ---
+function saveDraft() {
+    try {
+        localStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify({
+            orderNumber: state.orderNumber,
+            selectedClient: state.selectedClient
+                ? { code: state.selectedClient.code, name: state.selectedClient.name }
+                : null,
+            items: state.items
+        }));
+    } catch {
+        // Ignorar errores de almacenamiento
+    }
+}
+
+function loadDraft() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEYS.DRAFT);
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        if (!draft || typeof draft !== 'object') return;
+
+        if (typeof draft.orderNumber === 'string' && els.orderInput) {
+            state.orderNumber = draft.orderNumber;
+            els.orderInput.value = draft.orderNumber;
+        }
+
+        if (draft.selectedClient && draft.selectedClient.code && draft.selectedClient.name) {
+            const latestClient = clientsDB.find(c => c.code === draft.selectedClient.code) || draft.selectedClient;
+            selectClient(latestClient, true);
+        }
+
+        if (Array.isArray(draft.items)) {
+            state.items = draft.items.filter(item => item && item.code);
+            renderItems();
+        }
+    } catch {
+        // Ignorar borrador corrupto
+    }
+}
+
+function clearDraft(skipConfirm = false) {
+    const hasContent = Boolean(
+        state.orderNumber.trim() ||
+        state.selectedClient ||
+        state.items.length > 0
+    );
+
+    if (!skipConfirm && hasContent) {
+        if (!confirm('¿Limpiar el parte actual para empezar uno nuevo?')) {
+            return;
+        }
+    }
+
+    state.orderNumber = '';
+    state.items = [];
+    if (els.orderInput) els.orderInput.value = '';
+    if (els.itemCodeInput) els.itemCodeInput.value = '';
+    if (els.itemQtyInput) els.itemQtyInput.value = '';
+    if (els.itemCommentInput) els.itemCommentInput.value = '';
+
+    clearSelectedClient(true);
+    renderItems();
+    localStorage.removeItem(STORAGE_KEYS.DRAFT);
+    els.orderInput?.focus();
+}
+
+// --- History Management ---
+function getHistoryList() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEYS.HISTORY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveHistoryList(list) {
+    try {
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(list));
+    } catch {
+        // Ignorar si excede cuota
+    }
+    updateHistoryCount();
+}
+
+function saveReportToHistory(report) {
+    const history = getHistoryList();
+    history.unshift({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        sentAt: new Date().toISOString(),
+        orderNumber: report.orderNumber,
+        client: report.client,
+        items: report.items
+    });
+    saveHistoryList(history.slice(0, MAX_HISTORY_ITEMS));
+}
+
+function updateHistoryCount() {
+    if (els.historyCount) {
+        els.historyCount.textContent = String(getHistoryList().length);
+    }
+}
+
+function openHistoryModal() {
+    renderHistoryList();
+    els.historyModal?.classList.remove('hidden');
+}
+
+function closeHistoryModal() {
+    els.historyModal?.classList.add('hidden');
+}
+
+function clearAllHistory() {
+    const history = getHistoryList();
+    if (history.length === 0) return;
+    if (!confirm('¿Vaciar todo el historial de partes enviados?')) return;
+    saveHistoryList([]);
+    renderHistoryList();
+}
+
+function renderHistoryList() {
+    if (!els.historyList) return;
+    const history = getHistoryList();
+    els.historyList.innerHTML = '';
+
+    if (history.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'history-empty';
+        empty.textContent = 'Todavía no hay partes enviados en el historial.';
+        els.historyList.appendChild(empty);
+        return;
+    }
+
+    history.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+
+        const top = document.createElement('div');
+        top.className = 'history-top';
+
+        const clientDiv = document.createElement('div');
+        clientDiv.className = 'history-client';
+        clientDiv.textContent = `${entry.client?.code || ''} - ${entry.client?.name || 'Cliente'}`;
+
+        const dateDiv = document.createElement('div');
+        dateDiv.className = 'history-meta';
+        dateDiv.textContent = entry.sentAt ? new Date(entry.sentAt).toLocaleString('es-ES') : '';
+
+        top.appendChild(clientDiv);
+        top.appendChild(dateDiv);
+        card.appendChild(top);
+
+        if (entry.orderNumber) {
+            const orderDiv = document.createElement('div');
+            orderDiv.className = 'history-meta';
+            orderDiv.textContent = `Factura / Pedido: ${entry.orderNumber}`;
+            card.appendChild(orderDiv);
+        }
+
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'history-summary';
+        summaryDiv.textContent = (entry.items || [])
+            .map(i => `• ${i.code} (x${i.qty})${i.comment ? ' - ' + i.comment : ''}`)
+            .join('\n');
+        card.appendChild(summaryDiv);
+
+        const actions = document.createElement('div');
+        actions.className = 'history-actions';
+
+        const loadBtn = document.createElement('button');
+        loadBtn.type = 'button';
+        loadBtn.className = 'history-action-btn';
+        loadBtn.textContent = 'Cargar en borrador';
+        loadBtn.onclick = () => {
+            state.orderNumber = entry.orderNumber || '';
+            if (els.orderInput) els.orderInput.value = state.orderNumber;
+            if (entry.client) {
+                const latestClient = clientsDB.find(c => c.code === entry.client.code) || entry.client;
+                selectClient(latestClient, true);
+            }
+            state.items = (entry.items || []).map(i => ({ ...i }));
+            renderItems();
+            saveDraft();
+            closeHistoryModal();
+        };
+
+        const resendBtn = document.createElement('button');
+        resendBtn.type = 'button';
+        resendBtn.className = 'history-action-btn history-action-btn--primary';
+        resendBtn.textContent = 'Reenviar WhatsApp';
+        resendBtn.onclick = () => {
+            const phone = String(CONFIG.WHATSAPP_PHONE || '').replace(/\D/g, '');
+            if (!phone) {
+                alert('⚠️ Por favor, configura el teléfono de destino en ajustes.');
+                closeHistoryModal();
+                openSettings();
+                return;
+            }
+            const msg = buildReportMessage(entry.orderNumber || '', entry.client, entry.items || []);
+            openWhatsAppBusiness(phone, msg);
+        };
+
+        actions.appendChild(loadBtn);
+        actions.appendChild(resendBtn);
+        card.appendChild(actions);
+        els.historyList.appendChild(card);
+    });
 }
 
 // --- Theme & Settings ---
@@ -794,6 +1199,7 @@ async function syncClientsFromDrive() {
             if (refreshed) {
                 state.selectedClient = refreshed;
                 els.selectedClientName.textContent = `${refreshed.code} - ${refreshed.name}`;
+                saveDraft();
             }
         }
 
